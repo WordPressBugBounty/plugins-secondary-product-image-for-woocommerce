@@ -2,10 +2,10 @@
 Contributors:       wpzoom
 Donate link:        http://paypal.me/wpzm/10usd
 Author URI:         https://www.wpzoom.com/
-Requires at least:  5.7
-Tested up to:       6.7
+Requires at least:  6.0
+Tested up to:       6.9
 Stable tag:         1.0.2
-Requires PHP:       7.2
+Requires PHP:       7.4
 License:            GPLv2 or later
 License URI:        https://www.gnu.org/licenses/gpl-2.0.html
 Tags:               woocommerce, featured image, product, product image, flip, hover, secondary, shop
