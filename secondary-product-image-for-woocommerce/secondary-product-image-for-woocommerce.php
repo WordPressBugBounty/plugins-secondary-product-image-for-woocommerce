@@ -3,15 +3,19 @@
  * Plugin Name:       Secondary Product Image for WooCommerce
  * Plugin URI:        https://www.wpzoom.com/plugins/
  * Description:       Secondary Product Image for WooCommerce adds a hover effect that will reveal a secondary product thumbnail to product images on your WooCommerce product listings.
- * Version:           1.0.2
- * Requires at least: 6.0
+ * Version:           1.1.0
+ * Requires at least: 6.5
  * Requires PHP:      7.4
+ * Requires Plugins:  woocommerce
  * Author:            WPZOOM
  * Author URI:        https://www.wpzoom.com/
  * License:           GPL v2 or later
  * License URI:       https://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain:       secondary-product-image-for-woocommerce
  * Domain Path:       /languages
+ *
+ * WC requires at least: 8.0
+ * WC tested up to:      11.0
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -78,9 +82,61 @@ class WPZOOM_WC_Secondary_Product_Image {
 		add_action( 'admin_init', array( $this, 'metabox' ) );
 
 		add_action( 'init', array( $this, 'i18n' ) );
+		add_filter( 'plugin_action_links_' . WPZOOM_WC_SPI_PLUGIN_BASE, array( $this, 'plugin_action_links' ) );
+		add_action( 'before_woocommerce_init', array( $this, 'declare_woocommerce_compatibility' ) );
 		add_action( 'plugins_loaded', array( $this, 'on_plugins_loaded' ) );
 		add_action( 'plugins_loaded', array( $this, 'frontend' ) );
 
+	}
+
+	/**
+	 * Declare compatibility with WooCommerce features.
+	 *
+	 * The plugin only stores an attachment ID in post meta and never touches order
+	 * data, so it is fully compatible with High-Performance Order Storage (HPOS).
+	 *
+	 * Fired by `before_woocommerce_init` action hook.
+	 *
+	 * @since 1.0.3
+	 * @access public
+	 */
+	public function declare_woocommerce_compatibility() {
+
+		if ( ! class_exists( \Automattic\WooCommerce\Utilities\FeaturesUtil::class ) ) {
+			return;
+		}
+
+		\Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility( 'custom_order_tables', WPZOOM_WC_SPI__FILE__, true );
+		\Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility( 'cart_checkout_blocks', WPZOOM_WC_SPI__FILE__, true );
+
+	}
+
+	/**
+	 * Add a Settings link to the plugin row.
+	 *
+	 * The settings live inside WooCommerce, which is not an obvious place to look,
+	 * so the shortcut is worth having.
+	 *
+	 * @since 1.1.0
+	 * @access public
+	 * @param array $links
+	 * @return array
+	 */
+	public function plugin_action_links( $links ) {
+
+		if ( ! $this->is_woocommerce_activated() ) {
+			return $links;
+		}
+
+		$settings = sprintf(
+			'<a href="%1$s">%2$s</a>',
+			esc_url( admin_url( 'admin.php?page=wc-settings&tab=products&section=wpzoom-secondary-image' ) ),
+			esc_html__( 'Settings', 'secondary-product-image-for-woocommerce' )
+		);
+
+		array_unshift( $links, $settings );
+
+		return $links;
 	}
 
 	/**
@@ -104,7 +160,8 @@ class WPZOOM_WC_Secondary_Product_Image {
 	 * @return void
 	 */
 	public function frontend() {
-		
+
+		include_once WPZOOM_WC_SPI_PATH . 'includes/wpzoom-wc-spi-settings.php';
 		include_once WPZOOM_WC_SPI_PATH . 'includes/wpzoom-wc-spi-frontend.php';
 	}
 
@@ -187,7 +244,11 @@ class WPZOOM_WC_Secondary_Product_Image {
 			esc_html( $button_text )
 		);
 
-		printf( '<div class="notice notice-warning is-dismissible"><p>%1$s</p> <p>%2$s</p></div>', $message, $button );
+		printf(
+			'<div class="notice notice-warning is-dismissible"><p>%1$s</p> <p>%2$s</p></div>',
+			wp_kses_post( $message ),
+			wp_kses_post( $button )
+		);
 
 	}
 
